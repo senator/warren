@@ -41,7 +41,9 @@ class SharePacker(object):
         pkgfiles = []
         for f in os.listdir(src_dir):
             f = os.path.join(src_dir, f)
-            if os.path.isdir(f):
+            if f.endswith(self.archive_ext):
+                continue # don't plan to pack and repack archives
+            elif os.path.isdir(f):
                 pkgfiles.append(f + self.archive_ext)
             else:
                 pkgfiles.append(f) # install plain files if any at this level
@@ -59,9 +61,15 @@ class SharePacker(object):
             if f.endswith(self.archive_ext):
                 archive_name = os.path.basename(f)
                 dir_name = f.replace(self.archive_ext, "")
-                cmd = "cd %s && zip -u -z -r ../%s * <<<'WOR!'" % \
-                        (dir_name, archive_name)
-                print cmd
+
+                # XXX This is very UNIX specific and requires a zip command
+                # that acts like we expect.  Widely consistent on modern
+                # Linux and Mac OS X but certainly not guaranteed.
+                # XXX we should build in another dir so as not to have to
+                # avoid packing and repacking our archives
+                print "Building archive: %s" % archive_name
+                cmd = "cd %s && zip -q -u -z -x '*%s' -r ../%s * <<<'WOR!'" % \
+                        (dir_name, self.archive_ext, archive_name)
                 os.system(cmd)
 
 class build(_build):
@@ -70,7 +78,6 @@ class build(_build):
         self.execute(self._post_build, (), msg="Running post build task")
 
     def _post_build(self):
-        print "here in _post_build()"
         if self.prefs['pack_resources']:
             self.share_packer.pack()
 
@@ -81,7 +88,8 @@ class clean(_clean):
 
     def _post_clean(self):
         os.system("""rm -rf build;
-            find share -name '*.wor' -delete""")
+            find share -name '*.wor' -delete;
+            rm -f install.log""")
 
 
 class install(_install):
