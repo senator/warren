@@ -1,11 +1,9 @@
-import os, sys, pickle
+import os, sys
 from argparse import ArgumentParser
 from glob import glob
 from distutils.core import setup
 from distutils.command.install import install as _install
 from distutils.command.clean import clean as _clean
-
-data_map_cache_file = ".setup_data_file_map_cache"
 
 class MyParser(ArgumentParser):
     def print_usage(self, f=None):
@@ -24,11 +22,6 @@ def _post_install(setup_thing):
     pass
 
 def _post_clean(setup_thing):
-    try:
-        os.unlink(data_map_cache_file)
-    except OSError:
-        pass
-
     os.system("rm -rf build")
 
 class clean(_clean):
@@ -88,23 +81,12 @@ def prepare_share_data(dest_dir, src_dir):
     return result_map.items()
 
 def get_data_file_map(directories):
-    try:
-        f = open(data_map_cache_file, "r")
-        print "Loading data file map from cache ..."
-        return pickle.load(f)
-    except Exception:
-        pass
-
-    print "Determing installation structure of data files ..."
-
     data_file_map = [ (directories['conf'], glob('conf/*')) ]
-    data_file_map.extend(prepare_share_data(directories['share'], 'share'))
 
-    try:
-        f = open(data_map_cache_file, "w")
-        pickle.dump(data_file_map, f)
-    except Exception:
-        print "Could not cache data file map."
+    if 'install' in sys.argv[1:]: # XXX other command where this matters?
+        print "Determing installation structure of data files ..."
+
+        data_file_map.extend(prepare_share_data(directories['share'], 'share'))
 
     return data_file_map
 
