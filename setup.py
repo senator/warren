@@ -22,6 +22,48 @@ class MyParser(ArgumentParser):
     def format_help(self):
         raise MyParserBailOut
 
+class SharePacker(object):
+    archive_ext = ".wor"
+
+    def __init__(self, dest_dir, src_dir):
+        self._plan = None
+        self.src_dir = src_dir
+        self.dest_dir = dest_dir
+
+    def ready(self):
+        for L in self.plan().values():
+            for f in L:
+                if not os.access(f, os.R_OK):
+                    return False
+        return True
+
+    def _generate_plan(self, dest_dir, src_dir):
+        pkgfiles = []
+        for f in os.listdir(src_dir):
+            f = os.path.join(src_dir, f)
+            if os.path.isdir(f):
+                pkgfiles.append(f + self.archive_ext)
+            else:
+                pkgfiles.append(f) # install plain files if any at this level
+
+        return [(dest_dir, pkgfiles)] # return in this format for setup()
+
+    def plan(self, rebuild=False):
+        if self._plan is None or rebuild:
+            self._plan = self._generate_plan(self.dest_dir, self.src_dir)
+
+        return self._plan
+
+    def pack(self):
+        for f in self.plan()[0][1]:
+            if f.endswith(self.archive_ext):
+                archive_name = os.path.basename(f)
+                dir_name = f.replace(self.archive_ext, "")
+                cmd = "cd %s && zip -u -z -r ../%s * <<<'WOR!'" % \
+                        (dir_name, archive_name)
+                print cmd
+                os.system(cmd)
+
 class build(_build):
     def run(self):
         _build.run(self)
@@ -29,7 +71,8 @@ class build(_build):
 
     def _post_build(self):
         print "here in _post_build()"
-        print "pack_resources is %s" % self.prefs['pack_resources']
+        if self.prefs['pack_resources']:
+            self.share_packer.pack()
 
 class clean(_clean):
     def run(self):
@@ -37,7 +80,8 @@ class clean(_clean):
         self.execute(self._post_clean, (), msg="Running post clean task")
 
     def _post_clean(self):
-        os.system("rm -rf build")
+        os.system("""rm -rf build;
+            find share -name '*.wor' -delete""")
 
 
 class install(_install):
@@ -81,15 +125,13 @@ class install(_install):
 def determine_setup_prefs():
     results = {'share': 'share', 'conf': 'etc', 'pack_resources': False}
 
-    # XXX TODO The help= keyword arguments to add_argument below don't do
-    # any good since we don't let argparser control our usage info.  We need
-    # to add that to distutils/setup's help output instead
+    # We don't have help= keyword arguments to add_argument() below because
+    # we don't let argparser control this script's usage/--help output.  We
+    # add that to distutils/setup's help output instead.
     try:
         parser = MyParser()
-        parser.add_argument('--share-dir', default=results['share'], type=str,
-            help='destination directory for data files')
-        parser.add_argument('--conf-dir', default=results['conf'], type=str,
-            help='destination directory for configuration files')
+        parser.add_argument('--share-dir', default=results['share'], type=str)
+        parser.add_argument('--conf-dir', default=results['conf'], type=str)
         parser.add_argument('--pack-resources',
             default=results['pack_resources'], action='store_true',
             help='make archives of resources before installing to share-dir')
@@ -134,21 +176,27 @@ def prepare_share_data(dest_dir, src_dir):
 
     return result_map.items()
 
-def get_data_file_map(prefs):
+def get_data_file_map(prefs, share_packer):
     data_file_map = [ (prefs['conf'], glob('conf/*')) ]
 
     if 'install' in sys.argv[1:]: # XXX other command where this matters?
-        print "Determing installation structure of data files ..."
-
-        data_file_map.extend(prepare_share_data(prefs['share'], 'share'))
+        if prefs['pack_resources'] or share_packer.ready():
+            print "Planning to install packed (archived) resources ..."
+            data_file_map.extend(share_packer.plan())
+        else:
+            print "Determing installation structure of data files ..."
+            data_file_map.extend(prepare_share_data(prefs['share'], 'share'))
 
     return data_file_map
 
 if __name__ == "__main__":
     prefs = determine_setup_prefs()
-    data_files = get_data_file_map(prefs)
+    share_packer = SharePacker(os.path.join(prefs['share'], 'warren'),
+            'share/warren')
+    data_files = get_data_file_map(prefs, share_packer)
 
     build.prefs = prefs
+    build.share_packer = share_packer
     install.prefs = prefs
 
     setup(name='warren',
