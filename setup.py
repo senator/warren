@@ -62,14 +62,15 @@ class SharePacker(object):
                 archive_name = os.path.basename(f)
                 dir_name = f.replace(self.archive_ext, "")
 
-                # XXX This is very UNIX specific and requires a zip command
-                # that acts like we expect.  Widely consistent on modern
-                # Linux and Mac OS X but certainly not guaranteed.
+                # XXX This is very UNIX specific and requires both a) a zip
+                # command that acts like we expect and b) modern bash or zsh.
+                # These may be widely consistent on modern
+                # Linux and Mac OS X but certainly are not guaranteed.
                 # XXX we should build in another dir so as not to have to
                 # avoid packing and repacking our archives
                 print "Building archive: %s" % archive_name
-                cmd = "cd %s && zip -q -u -z -x '*%s' -r ../%s * <<<'WOR!'" % \
-                        (dir_name, self.archive_ext, archive_name)
+                cmd = "cd %s && zip -q -u -z -0 -x '*%s' -r ../%s * <<<'WOR!'" \
+                        % (dir_name, self.archive_ext, archive_name)
                 os.system(cmd)
 
 class build(_build):
