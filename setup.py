@@ -5,21 +5,34 @@ from distutils.core import setup
 from distutils.command.install import install as _install
 from distutils.command.clean import clean as _clean
 
+class MyParserBailOut(RuntimeError):
+    pass
+
 class MyParser(ArgumentParser):
     def print_usage(self, f=None):
-        raise ValueError
+        raise MyParserBailOut
 
     def print_help(self, f=None):
-        raise ValueError
+        raise MyParserBailOut
 
     def format_usage(self):
-        raise ValueError
+        raise MyParserBailOut
 
     def format_help(self):
-        raise ValueError
+        raise MyParserBailOut
 
 def _post_install(setup_thing):
-    pass
+    bin_script = os.path.join(setup_thing.install_scripts, 'run-warren.py')
+
+    sed_subst = 's$PATH_OVERRIDE = None$PATH_OVERRIDE = "%s"$' % \
+            os.path.abspath(setup_thing.install_lib)
+    sed_cmd = "sed -i -e '%s' %s " % (sed_subst, bin_script)
+    os.system("which sed > /dev/null && " + sed_cmd + " || "
+        "echo 'sed failed; you may need to set PYTHONPATH to run warren.'")
+
+    symlink = os.path.join(setup_thing.install_scripts, "warren")
+    if not os.access(symlink, os.F_OK):
+        os.symlink("run-warren.py", symlink)
 
 def _post_clean(setup_thing):
     os.system("rm -rf build")
@@ -32,8 +45,7 @@ class clean(_clean):
 class install(_install):
     def run(self):
         _install.run(self)
-        self.execute(_post_install, (self,),
-                     msg="Running post install task")
+        self.execute(_post_install, (self,), msg="Running post install task")
 
 def determine_setup_prefs():
     try:
@@ -45,7 +57,7 @@ def determine_setup_prefs():
 
         args, unknown = parser.parse_known_args()
         sys.argv = [sys.argv[0]] + unknown # important for setup()
-    except ValueError:
+    except MyParserBailOut:
         return {'share': 'share', 'conf': 'etc'}
 
     return {'share': args.share_dir, 'conf': args.conf_dir}
