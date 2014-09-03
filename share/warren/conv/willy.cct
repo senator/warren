@@ -1,0 +1,18 @@
+{
+  "message": "What can I not do for you today?",
+  "links": [
+    {
+      "response": "Where'd you get that coffee?",
+      "offer_test": "willy_has_coffee",
+      "next_node": {
+        "message": "Oh this isn't coffee."
+      }
+    },
+    {
+      "response": "I'm looking for Ann",
+      "next_node": {
+        "message": "Well I hope you find her!"
+      }
+    }
+  ]
+}
