@@ -21,7 +21,7 @@ waruninst() {
 }
 
 warinst() {
-    if [ -r setup.py ] && python lib/warren/__init__.py ; then
+    if [ -r setup.py ] && python lib/warren/__init__.py > /dev/null ; then
         if [ "$1" = "clean" ]; then
             waruninst
             python setup.py clean

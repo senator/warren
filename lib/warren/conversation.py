@@ -135,7 +135,7 @@ class Conversation(object):
                 elif link.jump:
                     link.next_node_id = link.jump
                 else:
-                    raise ConversationError, "Link had neither next_node nor jump"
+                    raise ConversationError("Link had neither next_node nor jump")
 
         return walk.node_id
 

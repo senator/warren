@@ -1,4 +1,4 @@
-class Conversant:
+class Conversant(object):
     """ A conversant is a character-thing that speaks in a given conversation.
     It does not remember its place in the conversation. """
 
@@ -19,4 +19,3 @@ class Conversant:
             self.speak(interactor, should_jump)
 
         return node.export(self, interactor)
-

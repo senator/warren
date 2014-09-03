@@ -1,4 +1,4 @@
-class Interactor:
+class Interactor(object):
     """ The player would be an example of an Interactor.  He can call a
     conversant's .speak() method. """
 

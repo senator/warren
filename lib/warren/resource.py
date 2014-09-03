@@ -1,8 +1,8 @@
+from warren import archive_extension
+
 from os.path import dirname, basename, join
 from os import access, R_OK
 from zipfile import ZipFile
-
-ARCHIVE_EXTENSION = ".wor"
 
 class ResourceFinder(object):
     def __init__(self, data_root):
@@ -14,7 +14,7 @@ class ResourceFinder(object):
         dir_name = dirname(path)
 
         while len(dir_name) > 0:
-            archive_name = join(self.data_root, dir_name + ARCHIVE_EXTENSION)
+            archive_name = join(self.data_root, dir_name + archive_extension)
 
             if access(archive_name, R_OK) and \
                 archive_name not in self.open_archives:
@@ -23,14 +23,17 @@ class ResourceFinder(object):
             if self.open_archives[archive_name]:
                 print "expecting to find file %s in archive %s" % \
                         (file_name, archive_name)
-                return self.open_archives[archive_name].extract_file(file_name)
+                return self.open_archives[archive_name].open(file_name)
+                    # XXX open() method is for ZipFile; would be different for
+                    # Tar if we want to change archive type.
 
             file_name = join(basename(dir_name), file_name)
             dir_name = dirname(dir_name)
 
-        raise IOError,
+        raise IOError(
             "File not found (%s), not even in archive; data_root is %s" % \
                     (path, self.data_root)
+                    )
 
     def open_for_reading(self, path):
         try:
@@ -53,7 +56,7 @@ class ResourceManager(object):
 
         return self.stash[path]
 
-    def clear(self, finder_too=False)
+    def clear(self, finder_too=False):
         self.stash.clear()
         if finder_too:
             self.resource_finder.clear()
