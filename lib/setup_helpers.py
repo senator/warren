@@ -118,6 +118,11 @@ class install(_install):
 
         sed_subst = 's$PATH_OVERRIDE = None$PATH_OVERRIDE = "%s"$' % \
                 os.path.abspath(self.install_lib)
+        # XXX the following works sometimes at least, but I think it's off a bit
+        sed_subst += \
+                ';s$DEFAULT_SHARE_PATH = None$DEFAULT_SHARE_PATH = "%s"$' % \
+                os.path.abspath(os.path.join(self.install_data, self.prefs['share']))
+
         sed_cmd = "sed -i -e '%s' %s " % (sed_subst, bin_script)
         os.system("which sed > /dev/null && " + sed_cmd + " || "
             "echo 'sed failed; you may need to set PYTHONPATH to run warren.'")
