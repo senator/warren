@@ -11,4 +11,4 @@ if PATH_OVERRIDE is not None and PATH_OVERRIDE not in sys.path:
 
 if __name__ == "__main__":
     import warren.runner
-    sys.exit(warren.runner.main())
+    sys.exit(warren.runner.main(data_root=DEFAULT_SHARE_PATH))

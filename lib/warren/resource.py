@@ -20,9 +20,9 @@ class ResourceFinder(object):
                 archive_name not in self.open_archives:
                 self.open_archives[archive_name] = ZipFile(archive_name, "r")
 
-            if self.open_archives[archive_name]:
-                print "expecting to find file %s in archive %s" % \
-                        (file_name, archive_name)
+            if archive_name in self.open_archives:
+#                print "expecting to find file %s in archive %s" % \
+#                        (file_name, archive_name)
                 return self.open_archives[archive_name].open(file_name)
                     # XXX open() method is for ZipFile; would be different for
                     # Tar if we want to change archive type.

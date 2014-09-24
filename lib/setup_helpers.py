@@ -28,10 +28,9 @@ class SharePacker(object):
         self.dest_dir = dest_dir
 
     def ready(self):
-        for L in self.plan().values():
-            for f in L:
-                if not os.access(f, os.R_OK):
-                    return False
+        for f in self.plan()[0][1]:
+            if not os.access(f, os.R_OK):
+                return False
         return True
 
     def _generate_plan(self, dest_dir, src_dir):
@@ -118,10 +117,9 @@ class install(_install):
 
         sed_subst = 's$PATH_OVERRIDE = None$PATH_OVERRIDE = "%s"$' % \
                 os.path.abspath(self.install_lib)
-        # XXX the following works sometimes at least, but I think it's off a bit
         sed_subst += \
                 ';s$DEFAULT_SHARE_PATH = None$DEFAULT_SHARE_PATH = "%s"$' % \
-                os.path.abspath(os.path.join(self.install_data, self.prefs['share']))
+                os.path.abspath(os.path.join(self.install_data, self.prefs['share'], 'warren'))
 
         sed_cmd = "sed -i -e '%s' %s " % (sed_subst, bin_script)
         os.system("which sed > /dev/null && " + sed_cmd + " || "

@@ -7,14 +7,15 @@ from warren.entities.conversant import Conversant
 from warren.conversation import Conversation
 import warren.conversations
 
-def main():
+def main(data_root=None):
     print "Warren %s" % version
     print "Arguments: ", sys.argv
+    print "Data root: ", data_root
 
     ########################
     # Silly tests, move these.
 
-    rf = ResourceFinder("/usr/local/share/warren") # XXX FIXME don't hardcode
+    rf = ResourceFinder(data_root)
 
     print "================="
     interactor = Interactor()
